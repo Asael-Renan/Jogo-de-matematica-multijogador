@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        #result {
+            box-shadow: 2px 2px 1px 1px rgb(180, 178, 178);
+            border-radius: 10px;
+            text-align: center;
+            font-size: 50px;
+            width: 100px;
+            height: 50px;
+            border: 0;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.267);
+        }
+
+        #result::-webkit-inner-spin-button,
+        #result::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+        }
+
+        #result:focus {
+            outline: none;
+        }
+
+        #account-container {
+            background-color: rgb(235, 240, 245);
+            width: 500px;
+            margin: 30px auto;
+            padding: 30px;
+            border-radius: 20px;
+        }
+
+        .modal-dialog {
+            top: 20%;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css">
+</head>
+
+<body class="container text-center">
+    <h1 class="mt-5">JOGO DE MATEMATICA</h1>
+    <hr>
+    <div id="meio">
+
+        <div id="account-container">
+            <h1 id="account" class="d-inline" style="font-size: 50px;">1 + 1 = </h1>
+            <input id="result" type="number" class="d-inline">
+            <h1 style="color: red;" class="d-inline ms-5" id="time"></h1>
+        </div>
+
+        <button id="verify" class="btn btn-outline-success form-control w-50">Verificar</button>
+
+        <table class="table m-auto" style="width: 500px;">
+            <h3 class="mt-4">TOP 10</h3>
+            <thead>
+                <tr scope="row">
+                    <th scope="column">Player</th>
+                    <th scope="column">Acertos</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr scope="row">
+                    <td scope="column">Thales</td>
+                    <td scope="column">1</td>
+                </tr>
+                <tr scope="row">
+                    <td scope="column">Asael</td>
+                    <td scope="column">Incontavel</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- modal -->
+    <div class="modal fade" id="startModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div id="start" class="modal-body">
+                    <h1 class="text-secondary my-5 text-lg">Iniciar jogo</h1>
+                    <button id="startGame" type="button" class="btn w-75 mt-3 btn-lg btn-primary"
+                        data-bs-dismiss="modal">Iniciar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+        import createGame from './game.js';
+        import createRenderScreen from './js/renderScreen.js';
+
+        const myModal = new bootstrap.Modal(document.getElementById('startModal'))
+
+        const socket = io();
+        const game = createGame();
+        const renderScreen = createRenderScreen();
+
+        socket.on('connect', () => console.log('conectado' + socket.id));
+
+        socket.on('setup', state => {
+            game.setState(state);
+            console.log(state)
+            renderScreen.loadNumbers(state.atualAccount);
+            for (const account in state.accounts) {
+                state.accounts[account];
+            }
+            if (!game.state.running) {
+                myModal.show()
+                document.getElementById('startGame').addEventListener('click', () => {
+                    socket.emit('start-game')
+                })
+            }
+        });
+
+        socket.on('change-account', command => {
+            renderScreen.loadNumbers(command.account);
+            renderScreen.loadCounter(command.schedule);
+        });
+
+        const verifyButton = document.getElementById('verify')
+        verifyButton.addEventListener('click', () => {
+            const result = document.getElementById('result')
+            socket.emit('check-result', {result: result.value})
+            result.value = ''
+        });
+
+    </script>
+</body>
+
+</html>
